@@ -156,7 +156,7 @@ int main(int argc, char *argv[]){
 
 	char moveX = 0;
 	char moveY = 0;
-	unsigned int length = 2;
+	unsigned int length = 4;
 
 	struct segment{
 		char xPos;
@@ -188,6 +188,7 @@ int main(int argc, char *argv[]){
 			else if(event.type == SDL_KEYDOWN) {
 				switch (event.key.keysym.sym) {
 					case SDLK_s:
+						// TODO replace with movedirection enum
 						moveY = -1;
 						moveX = 0;
 						break;
@@ -208,27 +209,13 @@ int main(int argc, char *argv[]){
 			}
 		}
 		
-		// makes a new head at the front and puts it in an available spot in the array
-		for(int i = 0; i < length; i++){
-			segments[i].age++;
-			if(segments[i].age == length){
-				segments[i].age = 0;
-				headX += moveX;
-				headY += moveY;
-				segments[i].xPos = headX;
-				segments[i].yPos = headY;
-			}
+		// move snake forwards one
+		for(int i = length - 1; i > 0; i--){
+			segments[i].xPos = segments[i - 1].xPos;
+			segments[i].yPos = segments[i - 1].yPos;
 		}
-
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
-		for(int i = 0; i < length; i++){
-			if(segments[i].age != length){
-				posBuffer[0] = ((float) segments[i].xPos / 8) - 1;
-				posBuffer[1] = ((float) segments[i].yPos / 8) - 1;
-				glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
-				glDrawArrays(GL_TRIANGLES, 0, 6);
-			}
-		}
+		segments[0].xPos += moveX;
+		segments[0].yPos += moveY;
 
 		/* render */
 		SDL_GetWindowSize(window, &width, &height);
@@ -238,14 +225,39 @@ int main(int argc, char *argv[]){
 
 		glBindBufferBase(GL_UNIFORM_BUFFER, 1, aspect_ratio_buffer);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(aspect_ratio), &aspect_ratio, GL_DYNAMIC_DRAW); 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 
+		// draw head (diff texture)
 		int activeTextureIndex = 0;
 		glBindBufferBase(GL_UNIFORM_BUFFER, 2, activeTextureBuffer);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(activeTextureIndex), &activeTextureIndex, GL_DYNAMIC_DRAW);
-
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+		posBuffer[0] = ((float) segments[0].xPos / 8) - 1;
+		posBuffer[1] = ((float) segments[0].yPos / 8) - 1;
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		// switch to body texture
+		activeTextureIndex = 1;
+		glBindBufferBase(GL_UNIFORM_BUFFER, 2, activeTextureBuffer);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(activeTextureIndex), &activeTextureIndex, GL_DYNAMIC_DRAW);
+
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
+		for(int i = 1; i < length; i++){
+			posBuffer[0] = ((float) segments[i].xPos / 8) - 1;
+			posBuffer[1] = ((float) segments[i].yPos / 8) - 1;
+			glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+
+
+		/*
+		activeTextureIndex = 2;
+		glBindBufferBase(GL_UNIFORM_BUFFER, 2, activeTextureBuffer);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(activeTextureIndex), &activeTextureIndex, GL_DYNAMIC_DRAW);
+		*/
+
+
+		//glDrawArrays(GL_TRIANGLES, 0, 6);
 		SDL_GL_SwapWindow(window);
 
 		/* wait for the next frame */
