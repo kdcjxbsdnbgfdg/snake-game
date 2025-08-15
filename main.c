@@ -5,6 +5,7 @@
 #include <stb/stb_image.h>
 #include <time.h>
 
+#define TARGET_FPS 5
 
 void createShader(GLuint shader, char *name){
 	FILE *filePointer = fopen(name , "r");	
@@ -155,12 +156,12 @@ int main(int argc, char *argv[]){
 
 	char moveX = 0;
 	char moveY = 0;
-	unsigned int length = 1;
+	unsigned int length = 2;
 
 	struct segment{
 		char xPos;
 		char yPos;
-		unsigned int age;
+		unsigned short age;
 	};
 	struct segment segments[8*8];
 	// gives random number from 0 to 15
@@ -188,35 +189,37 @@ int main(int argc, char *argv[]){
 				switch (event.key.keysym.sym) {
 					case SDLK_s:
 						moveY = -1;
+						moveX = 0;
 						break;
 					case SDLK_w:
 						moveY = 1;
+						moveX = 0;
 						break;
 					case SDLK_a:
+						moveY = 0;
 						moveX = -1;
 						break;
 					case SDLK_d:
+						moveY = 0;
 						moveX = 1;
 						break;
 				}
-				// makes a new head at the front and puts it in an available spot in the array
 				
-				for(int i = 0; i < length; i++){
-					segments[i].age++;
-					if(segments[i].age == length){
-						segments[i].age = 0;
-						headX += moveX;
-						headY += moveY;
-						segments[i].xPos = headX;
-						segments[i].yPos = headY;
-						moveX = 0;
-						moveY = 0;
-					}
-				}
+			}
+		}
+		
+		// makes a new head at the front and puts it in an available spot in the array
+		for(int i = 0; i < length; i++){
+			segments[i].age++;
+			if(segments[i].age == length){
+				segments[i].age = 0;
+				headX += moveX;
+				headY += moveY;
+				segments[i].xPos = headX;
+				segments[i].yPos = headY;
 			}
 		}
 
-		
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
 		for(int i = 0; i < length; i++){
 			if(segments[i].age != length){
@@ -244,7 +247,17 @@ int main(int argc, char *argv[]){
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		SDL_GL_SwapWindow(window);
-	}
+
+		/* wait for the next frame */
+		
+		struct timespec wait;
+		wait.tv_sec = 0; // initialise to 0 so it isnt random gibberish
+		wait.tv_nsec = 1000000000 / TARGET_FPS;
+		clock_nanosleep(CLOCK_MONOTONIC, 0, &wait, NULL);
+		
+		
+
+	} /* while (run == 1) */
 
 	SDL_Quit();
 	return 0;
