@@ -1,7 +1,8 @@
 #define GL_GLEXT_PROTOTYPES
 #include <GL/glut.h>
 #include <SDL2/SDL.h>
-#include <SOIL/SOIL.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
 #include <time.h>
 
 
@@ -34,16 +35,16 @@ void createTexture(GLuint texture, int activeTexture, char *name){
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, colour);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-	int texWidth, texHeight;
+	int texWidth, texHeight, channels;
 	// must be 2^n * 2^n
 	char texName[sizeof("textures/.png") + strlen(name)];
 	strcpy(texName, "textures/");
 	strcat(texName, name);
 	strcat(texName, ".png");
-	unsigned char *image = SOIL_load_image(texName, &texWidth, &texHeight, 0, SOIL_LOAD_RGBA);
+	unsigned char *image = stbi_load(texName, &texWidth, &texHeight, &channels, 0);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
-	SOIL_free_image_data(image);
+	stbi_image_free(image);
 
 }
 
