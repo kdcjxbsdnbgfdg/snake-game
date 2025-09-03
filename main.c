@@ -82,7 +82,7 @@ void createTexture(GLuint texture, int activeTexture, char *name){
 
 // i think i need to switch to text texture
 // x and y start, x and y scale
-void renderText(char *string, FT_Face face, float x, float y, float scaleX, float scaleY){// i think sx and sy are size
+void renderText(const char *string, FT_Face face, float x, float y, float scaleX, float scaleY){
 	FT_GlyphSlot g = face->glyph;
 	for(const char *p = string; *p != 0; p++){ // *p deferences the pointer, giving the char, strings are null terminated
 		if(FT_Load_Char(face, *p, FT_LOAD_RENDER)) continue;
@@ -102,7 +102,7 @@ void renderText(char *string, FT_Face face, float x, float y, float scaleX, floa
 			{x2 + w, -y2 - h, 1, 1}
 		};
 		glBufferData(GL_ARRAY_BUFFER, sizeof(box), box, GL_DYNAMIC_DRAW);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
 
 		// im not fully sure if i need the float cast
 		x += ((float)g->advance.x/64) * scaleX;
@@ -146,14 +146,14 @@ int main(int argc, char *argv[]){
 	/* triangle
 	 * coords go from (-1, -1) to (1, 1) */
 	float triangle[42] = {
-		// position, colour,          texture coords
-		0.125f, 0.000f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // bottom right
-		0.000f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,   // top left
-		0.000f, 0.000f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,   // bottom left
+		// position,    colour,          texture coords
+		0.125f, 0.000f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // bottom right
+		0.000f, 0.125f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,   // top left
+		0.000f, 0.000f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,   // bottom left
 		// second triangle
-		0.125f, 0.000f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,  // bottom right
-		0.125f, 0.125f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // top right
-		0.000f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f   // top left
+		0.125f, 0.000f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,  // bottom right
+		0.125f, 0.125f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // top right
+		0.000f, 0.125f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f   // top left
 	};
 	
 	/* Create Buffers */
@@ -342,11 +342,18 @@ int main(int argc, char *argv[]){
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 		
 		// render text
+		uniformBufferInt(3, activeTextureBuffer, 4);
+		uniformBufferInt(0, rotation_buffer, 5);
+		float scaleX = 2.0 / width;
+		float scaleY = 2.0 / height;
+		posBuffer[0] = 0;
+		posBuffer[1] = 0;
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
+		renderText("Press esc to close", face, 0, 0, scaleX, scaleY);
 
 
 		// draw apple
 		uniformBufferInt(2, activeTextureBuffer, 4);
-		uniformBufferInt(0, rotation_buffer, 5);
 		posBuffer[0] = ((float) appleX / 8) - 1;
 		posBuffer[1] = ((float) appleY / 8) - 1;
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
