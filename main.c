@@ -80,7 +80,6 @@ void createTexture(GLuint texture, int activeTexture, char *name){
 	stbi_image_free(image);
 }
 
-// i think i need to switch to text texture
 // x and y start, x and y scale
 void renderText(const char *string, FT_Face face, float x, float y, float scaleX, float scaleY){
 	FT_GlyphSlot g = face->glyph;
@@ -96,13 +95,17 @@ void renderText(const char *string, FT_Face face, float x, float y, float scaleX
 
 		// coords and stuff to draw lol
 		float box[4][4] = {
-			{x2,     -y2,     0, 0},
-			{x2 + w, -y2,     1, 0},
-			{x2,     -y2 - h, 0, 1},
-			{x2 + w, -y2 - h, 1, 1}
+			{x2,     y2,     0, 0},
+			{x2,     y2 - h, 0, 1},
+			{x2 + w, y2,     1, 0},
+			{x2 + w, y2 - h, 1, 1}
 		};
 		glBufferData(GL_ARRAY_BUFFER, sizeof(box), box, GL_DYNAMIC_DRAW);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(2);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 9);
 
 		// im not fully sure if i need the float cast
 		x += ((float)g->advance.x/64) * scaleX;
@@ -348,6 +351,7 @@ int main(int argc, char *argv[]){
 		float scaleY = 2.0 / height;
 		posBuffer[0] = 0;
 		posBuffer[1] = 0;
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
 		renderText("Press esc to close", face, 0, 0, scaleX, scaleY);
 
@@ -376,8 +380,28 @@ int main(int argc, char *argv[]){
 		// draw all body segments
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
 		for(int i = 1; i < length; i++){
-			posBuffer[0] = ((float) segments[i].xPos / 8) - 1;
-			posBuffer[1] = ((float) segments[i].yPos / 8) - 1;
+			float x = ((float) segments[i].xPos / 8) - 1;
+			float y = ((float) segments[i].yPos / 8) - 1;
+			float triangle[42] = {
+				// position,    colour,          texture coords
+				x + 0.125f, y         , 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // bottom right
+				x         , y + 0.125f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,   // top left
+				x         , y         , 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,   // bottom left
+																// second triangle
+				x + 0.125f, y         , 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,  // bottom right
+				x + 0.125f, y + 0.125f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // top right
+				x         , y + 0.125f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f   // top left
+			};
+			glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW); 
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), 0);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(2 * sizeof(float)));
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(5 * sizeof(float)));
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+			glEnableVertexAttribArray(2);
+			//posBuffer[0] = ((float) segments[i].xPos / 8) - 1;
+			//posBuffer[1] = ((float) segments[i].yPos / 8) - 1;
+			posBuffer[0] = 0; posBuffer[1] = 0;
 			glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
