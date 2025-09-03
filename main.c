@@ -101,10 +101,12 @@ void renderText(const char *string, FT_Face face, float x, float y, float scaleX
 			{x2 + w, y2 - h, 1, 1}
 		};
 		glBufferData(GL_ARRAY_BUFFER, sizeof(box), box, GL_DYNAMIC_DRAW);
+		/*
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(2);
+		*/
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 9);
 
 		// im not fully sure if i need the float cast
@@ -160,11 +162,11 @@ int main(int argc, char *argv[]){
 	};
 	
 	/* Create Buffers */
-	GLuint vertex_array, vertex_buffer;
+	GLuint vertex_array, vertex_buffer_square;
 	glGenVertexArrays(1, &vertex_array);
-	glGenBuffers(1, &vertex_buffer);
+	glGenBuffers(1, &vertex_buffer_square);
 	glBindVertexArray(vertex_array);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);	
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_square);	
 
 	/* movement buffer */
 	GLuint movement_buffer;
@@ -224,11 +226,13 @@ int main(int argc, char *argv[]){
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	// buffer for text rendering
-	GLuint vbo;
-	glGenBuffers(1, &vbo);
-	glEnableVertexAttribArray(3);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 0, 0);
+	GLuint vbo_text;
+	glGenBuffers(1, &vbo_text);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_text);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 
 	// where to put this lol
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -345,6 +349,9 @@ int main(int argc, char *argv[]){
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 		
 		// render text
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_text);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 		uniformBufferInt(3, activeTextureBuffer, 4);
 		uniformBufferInt(0, rotation_buffer, 5);
 		float scaleX = 2.0 / width;
@@ -354,6 +361,11 @@ int main(int argc, char *argv[]){
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
 		renderText("Press esc to close", face, 0, 0, scaleX, scaleY);
+
+		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_square);	
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), 0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(2 * sizeof(float)));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(5 * sizeof(float)));
 
 
 		// draw apple
@@ -380,6 +392,7 @@ int main(int argc, char *argv[]){
 		// draw all body segments
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, movement_buffer);
 		for(int i = 1; i < length; i++){
+			/*
 			float x = ((float) segments[i].xPos / 8) - 1;
 			float y = ((float) segments[i].yPos / 8) - 1;
 			float triangle[42] = {
@@ -399,9 +412,10 @@ int main(int argc, char *argv[]){
 			glEnableVertexAttribArray(0);
 			glEnableVertexAttribArray(1);
 			glEnableVertexAttribArray(2);
-			//posBuffer[0] = ((float) segments[i].xPos / 8) - 1;
-			//posBuffer[1] = ((float) segments[i].yPos / 8) - 1;
-			posBuffer[0] = 0; posBuffer[1] = 0;
+			*/
+			posBuffer[0] = ((float) segments[i].xPos / 8) - 1;
+			posBuffer[1] = ((float) segments[i].yPos / 8) - 1;
+			//posBuffer[0] = 0; posBuffer[1] = 0;
 			glBufferData(GL_UNIFORM_BUFFER, sizeof(posBuffer), posBuffer, GL_DYNAMIC_DRAW); 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
